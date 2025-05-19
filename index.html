@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Diagnosa Tanaman Kangkung</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 2em;
+            background-color: #f4f4f4;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: white;
+            padding: 2em;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .gejala {
+            margin-bottom: 1em;
+        }
+
+        button {
+            padding: 0.5em 1em;
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #219150;
+        }
+
+        .hasil {
+            margin-top: 1.5em;
+            padding: 1em;
+            background-color: #ecf0f1;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Diagnosa Tanaman Kangkung</h1>
+        <form id="diagnosaForm">
+            <div id="gejalaList" class="gejala">
+                <p>Memuat gejala...</p>
+            </div> <button type="submit">Diagnosa</button>
+        </form>
+        <div class="hasil" id="hasilDiagnosa"></div>
+    </div>
+    <script>
+        const apiUrl = "http://localhost:5000";
+
+        // Ambil data gejala dari backend
+        fetch(apiUrl + "/gejala")
+            .then(res => res.json())
+            .then(data => {
+                const gejalaDiv = document.getElementById("gejalaList");
+                gejalaDiv.innerHTML = "";
+
+                data.forEach(gejala => {
+                    const checkbox = document.createElement("input");
+                    checkbox.type = "checkbox";
+                    checkbox.id = "gejala_" + gejala.id;
+                    checkbox.value = gejala.id;
+
+                    const label = document.createElement("label");
+                    label.htmlFor = checkbox.id;
+                    label.innerText = ` ${gejala.kode} - ${gejala.deskripsi}`;
+
+                    const br = document.createElement("br");
+
+                    gejalaDiv.appendChild(checkbox);
+                    gejalaDiv.appendChild(label);
+                    gejalaDiv.appendChild(br);
+                });
+            })
+            .catch(err => {
+                document.getElementById("gejalaList").innerHTML = "<p>Gagal memuat gejala.</p>";
+                console.error(err);
+            });
+
+        // Proses submit form diagnosa
+        document.getElementById("diagnosaForm").addEventListener("submit", function (e) {
+            e.preventDefault();
+
+            const selectedGejala = [];
+            document.querySelectorAll("input[type='checkbox']:checked").forEach(cb => {
+                selectedGejala.push(parseInt(cb.value));
+            });
+
+            fetch(apiUrl + "/diagnosa", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ gejala: selectedGejala })
+            })
+                .then(res => res.json())
+                .then(result => {
+                    document.getElementById("hasilDiagnosa").innerHTML = `
+                    <strong>Penyakit:</strong> ${result.penyakit}<br>
+                    <strong>Solusi:</strong> ${result.solusi}
+                `;
+                })
+                .catch(err => {
+                    document.getElementById("hasilDiagnosa").innerHTML = "<p>Gagal melakukan diagnosa.</p>";
+                    console.error(err);
+                });
+        });
+    </script>
+
+</body>
+
+</html>
